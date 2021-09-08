@@ -6,20 +6,25 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.hardware.*
-import android.os.Binder
-import android.os.Build
-import android.os.CountDownTimer
-import android.os.IBinder
+import android.os.*
 import android.util.Log
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
+import androidx.lifecycle.LifecycleCoroutineScope
+import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.lifecycleScope
+import com.example.countdown.CountActivity.Companion.secondNotificationPop
+import com.example.countdown.CountActivity.Companion.userCome
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.coroutines.*
 
-class CounterService : Service() {
+class CounterService : LifecycleService() {
     private var alarmBinder: IBinder = CounterStartService()
     var myCount = MutableLiveData<Float>()
+    lateinit var timerJob: Job
+    var myCountMain = MutableLiveData<String>()
+
 
     inner class CounterStartService : Binder() {
         val myService: CounterService
@@ -51,6 +56,79 @@ class CounterService : Service() {
 //        }
 
     }
+    fun startTimer(){
+        calculateTime(SystemClock.uptimeMillis(), lifecycleScope) {
+
+        }
+    }
+
+    fun calculateTime(
+        startTime: Long,
+        lifecycleScope: LifecycleCoroutineScope,
+        time: (String) -> Unit
+    ) {
+        var timeInMilliseconds: Long = 0L
+        val elsp = 0L
+        var updated = 0L
+        var timerCompare = 1
+        timerJob = lifecycleScope.launch(CoroutineExceptionHandler(){ _, _ ->
+            time("00:00:00")
+        }) {
+            while (isActive) {
+                delay(1000)
+                timeInMilliseconds = SystemClock.uptimeMillis() - startTime
+                updated = timeInMilliseconds + elsp
+                var seconds = (updated / 1000)
+                var minutes = seconds / 60
+                val hours = minutes / 60
+                seconds %= 60
+                minutes %= 60
+                val timeString = String.format(
+                    "%d:%s:%s",
+                    hours,
+                    String.format("%02d", minutes),
+                    String.format(
+                        "%02d",
+                        seconds
+                    )
+                )
+                timerCompare++
+
+                CountActivity.counter = seconds.toInt()
+                Log.e("myCounter", CountActivity.counter.toString())
+                val format = String.format(
+                    resources.getString(R.string.modify_time_string),
+                    timeString
+                )
+                time(format)
+//                if (secondNotificationPop == false) {
+                    if (CountActivity.inResumeCome == 1 || (CountActivity.inResumeCome == 0 && CountActivity.userCome == 1)) {
+                        if (CountActivity.counter == CountActivity.inBackgroundCounter + 10) {
+                            CountActivity.notificationManager.notify(
+                                200,
+                                Utils.showNewNotification(
+                                    "App stopped",
+                                    "App stopped",
+                                    this@CounterService
+                                )
+
+                            )
+
+                            stopSelf()
+
+                            secondNotificationPop = true
+
+                        }
+//                    }
+                }
+
+                myCountMain.value = format
+            }
+            time("00:00:00")
+        }
+
+
+    }
 
     fun startMyCounter(callback: (Float) -> Unit) {
         object : CountDownTimer(50000, 1000) {
@@ -67,7 +145,9 @@ class CounterService : Service() {
         callback(CountActivity.counter.toFloat())
     }
 
-    override fun onBind(p0: Intent?): IBinder? {
+    @RequiresApi(Build.VERSION_CODES.M)
+    override fun onBind(intent: Intent): IBinder? {
+        super.onBind(intent)
         return alarmBinder
     }
 
@@ -86,6 +166,7 @@ class CounterService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        Log.e("serviceDestroy","serviceDestroy")
         stopService()
         CountActivity.counter = 0
     }

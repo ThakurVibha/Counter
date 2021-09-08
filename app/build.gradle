@@ -52,5 +52,8 @@ dependencies {
     //New Android X dependency is this -
     implementation "androidx.lifecycle:lifecycle-extensions:2.2.0"
     implementation 'com.ankushgrover:Hourglass:2.0.0'
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.1-native-mt"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.4.0-alpha03"
+    implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.3.1"
 
 }

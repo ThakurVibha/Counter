@@ -15,14 +15,14 @@
         <service
             android:name="com.example.countdown.CounterService"
             android:enabled="true"
-            android:exported="true" />
+            android:exported="true"
+            android:stopWithTask="true"/>
         <activity
             android:name=".CountActivity"
             android:exported="true">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 

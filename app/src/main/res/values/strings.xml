@@ -3,4 +3,5 @@
     <string name="_0_0">0</string>
     <string name="start_timer">Start Timer</string>
     <string name="counting">Counting</string>
+    <string name="modify_time_string">%1$s</string>
 </resources>

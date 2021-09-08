@@ -1,6 +1,5 @@
 package com.example.countdown
 
-import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.app.NotificationManager
 import android.content.ComponentName
@@ -10,46 +9,57 @@ import android.content.ServiceConnection
 import android.os.*
 import androidx.appcompat.app.AppCompatActivity
 import android.util.Log
-import android.widget.Toast
-import com.ankushgrover.hourglass.Hourglass
+import androidx.lifecycle.LifecycleCoroutineScope
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.lifecycleScope
 import com.example.countdown.Utils.showNewNotification
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.*
-import java.lang.Runnable
 import java.util.*
+import android.app.Service.START_NOT_STICKY
+import android.app.Service.START_STICKY
+import android.app.KeyguardManager
+import android.os.Build
+
+import android.os.PowerManager
 
 
 class CountActivity : AppCompatActivity() {
 
     var appRunningBackground: Boolean = false
-    lateinit var notificationManager: NotificationManager
-    var counterEnter = true
     private var beforeTime = 0
     private val t = Timer()
-    var resumeCounter = 0
     var isAppInBackground = true
-    private var countDownTimer: CountDownTimer? = null
-    private var resumeCountDown: CountDownTimer? = null
+    lateinit var countService: CounterService
 
     companion object {
         var counter = 0
+        var userCome = 0
+        var inResumeCome = 0
+        var inBackgroundCounter = 0
+        var secondNotificationPop = false
+        lateinit var notificationManager: NotificationManager
     }
 
-    lateinit var countService: CounterService
+
     private var mServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
-            var myServiceBinder: CounterService.CounterStartService =
+            val myServiceBinder: CounterService.CounterStartService =
                 p1 as CounterService.CounterStartService
             countService = myServiceBinder.myService
 
-            countService.myCount.observe(this@CountActivity) {
-
+            countService.myCountMain.observe(this@CountActivity) {
+                tvCount.text = it.toString()
             }
-
         }
 
         override fun onServiceDisconnected(p0: ComponentName?) {
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Log.e("onStop", "onStop")
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,7 +79,7 @@ class CountActivity : AppCompatActivity() {
                 t.scheduleAtFixedRate(
                     object : TimerTask() {
                         override fun run() {
-                            if (counter == 10) {
+                            if (counter == counter) {
                                 Log.e("counterTimer", "run: ")
                                 CoroutineScope(Dispatchers.IO).launch {
                                     delay(10000)
@@ -95,8 +105,9 @@ class CountActivity : AppCompatActivity() {
 
     private fun onclick() {
         btnStart.setOnClickListener {
-            startCounter()
             startService()
+            countService.startTimer()
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 Utils.newNotificationChannel(this)
             }
@@ -113,35 +124,48 @@ class CountActivity : AppCompatActivity() {
         }
     }
 
+
     override fun onResume() {
         super.onResume()
-        if (counter < 10) {
-            resumeCounter = counter
-            tvCount.text = resumeCounter.toString()
-        }
-        else{
+        secondNotificationPop = false
+        if (counter == inBackgroundCounter + 10) {
+            if (userCome == 1) {
+                inResumeCome = 1
+            }
 
+        } else {
+            userCome = 0
+            inResumeCome = 0
         }
-        Log.e("onResume", "onResume: ")
+
     }
+
 
     override fun onPause() {
         super.onPause()
-        startCounter()
+        val powerManager = getSystemService(POWER_SERVICE)
+//        isScreenAwake = if (Build.VERSION.SDK_INT < 20) powerManager.isScreenOn else powerManager.isInteractive
+//        if (!isPhoneLocked){
         isAppInBackground = true
         if (counter != 0) {
             notificationManager.notify(
                 1001,
                 showNewNotification("App running", "Your app will be stop after 10 seconds", this)
             )
+            inBackgroundCounter = counter
+//            }
+
+            userCome = 1
         }
+
 
     }
 
 
     override fun onDestroy() {
         super.onDestroy()
-        countDownTimer!!.cancel()
+        Log.e("destroy", "destroy")
+
     }
 
     private fun showSecondNotification() {
@@ -153,7 +177,7 @@ class CountActivity : AppCompatActivity() {
 
     private fun startService() {
         try {
-            var startService = Intent(this, CounterService::class.java)
+            val startService = Intent(this, CounterService::class.java)
             bindService(intent, mServiceConnection, BIND_AUTO_CREATE)
             startService(startService)
         } catch (e: Exception) {
@@ -161,30 +185,72 @@ class CountActivity : AppCompatActivity() {
         }
     }
 
+
     private fun stopService() {
         var stopService = Intent(this, CounterService::class.java)
         unbindService(mServiceConnection)
         stopService(stopService)
     }
 
-    private fun startCounter() {
-        countDownTimer = object : CountDownTimer(50000, 1000) {
-            @SuppressLint("SetTextI18n")
-            override fun onTick(p0: Long) {
-                counterEnter = true
-                isAppInBackground = false
-                tvCount.text = counter.toString()
-                Log.e("myCounter", counter.toString())
-                counter++
-                resumeCounter = counter
-            }
 
-            @SuppressLint("SetTextI18n")
-            override fun onFinish() {
+//    fun calculateTime(
+//        startTime: Long,
+//        lifecycleScope: LifecycleCoroutineScope,
+//        time: (String) -> Unit
+//        ) {
+//            var timeInMilliseconds: Long = 0L
+//            val elsp = 0L
+//            var updated = 0L
+//            timerJob = lifecycleScope.launch(CoroutineExceptionHandler(){ _, _ ->
+//                time("00:00:00")
+//            }) {
+//                while (isActive) {
+//                    delay(1000)
+//                    timeInMilliseconds = SystemClock.uptimeMillis() - startTime
+//                    updated = timeInMilliseconds + elsp
+//                    var seconds = (updated / 1000)
+//                    var minutes = seconds / 60
+//                    val hours = minutes / 60
+//                    seconds %= 60
+//                    minutes %= 60
+//                    val timeString = String.format(
+//                        "%d:%s:%s",
+//                        hours,
+//                        String.format("%02d", minutes),
+//                        String.format(
+//                            "%02d",
+//                            seconds
+//                        )
+//                    )
+//                    val format = String.format(
+//                        resources.getString(R.string.modify_time_string),
+//                        timeString
+//                    )
+//                    time(format)
+//                }
+//                time("00:00:00")
+//            }
+//
+//
+//        }
 
-            }
-        }.start()
-    }
+
+//        countDownTimer = object : CountDownTimer(50000, 1000) {
+//            @SuppressLint("SetTextI18n")
+//            override fun onTick(p0: Long) {
+//                counterEnter = true
+//                isAppInBackground = false
+//                tvCount.text = counter.toString()
+//                Log.e("myCounter", counter.toString())
+//                counter++
+//                resumeCounter = counter
+//            }
+//
+//            @SuppressLint("SetTextI18n")
+//            override fun onFinish() {
+//
+//            }
+//        }.start()
 
 
 //    private fun resumeCounter() {
