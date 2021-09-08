@@ -1,4 +1,4 @@
-package com.example.countdown.utils
+package com.example.countdown
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -10,22 +10,10 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.example.countdown.activities.CountActivity
 
 object  Utils {
     var CHANNEL_ID = "ForegroundService Kotlin"
     var NEW_CHANNEL_ID="id"
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun notificationChannel(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val serviceChannel = NotificationChannel(
-                CHANNEL_ID, "Counter channel",
-                NotificationManager.IMPORTANCE_HIGH
-            )
-            val manager = ContextCompat.getSystemService(context, NotificationManager::class.java)
-            manager!!.createNotificationChannel(serviceChannel)
-        }
-    }
     @RequiresApi(Build.VERSION_CODES.O)
     fun newNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -45,7 +33,7 @@ object  Utils {
         }
         val pendingIntent = Intent(context, CountActivity::class.java)
         val buttonPendingIntent = PendingIntent.getBroadcast(context, 0, pendingIntent, 0)
-        return NotificationCompat.Builder(context, Utils.NEW_CHANNEL_ID)
+        return NotificationCompat.Builder(context, NEW_CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(msg)
             .setSmallIcon(android.R.drawable.checkbox_on_background)

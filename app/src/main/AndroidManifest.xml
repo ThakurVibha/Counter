@@ -13,11 +13,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CountDown">
         <service
-            android:name="com.example.countdown.activities.CounterService"
+            android:name="com.example.countdown.CounterService"
             android:enabled="true"
             android:exported="true" />
         <activity
-            android:name=".activities.CountActivity"
+            android:name=".CountActivity"
             android:exported="true">
 
             <intent-filter>
