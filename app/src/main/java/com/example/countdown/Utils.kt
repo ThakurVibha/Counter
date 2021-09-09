@@ -32,7 +32,7 @@ object  Utils {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         val pendingIntent = Intent(context, CountActivity::class.java)
-        val buttonPendingIntent = PendingIntent.getBroadcast(context, 0, pendingIntent, 0)
+        val buttonPendingIntent = PendingIntent.getActivity(context, 0, pendingIntent, 0)
         return NotificationCompat.Builder(context, NEW_CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(msg)
@@ -42,6 +42,6 @@ object  Utils {
                 android.R.drawable.sym_def_app_icon,
                 "ForegroundService",
                 buttonPendingIntent
-            ).build()
+            ).setContentIntent(buttonPendingIntent).build()
     }
 }

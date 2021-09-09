@@ -47,15 +47,9 @@ class CounterService : LifecycleService() {
             .build()
         startForeground(101, notification)
 
-//        startMyCounter {
-//            myCount.value = it
-//            if(CountActivity.counter==10){
-//                CountActivity().showSecondNotification()
-//            }
-//            Log.e("TAG", "onCreate: ", )
-//        }
-
     }
+
+
     fun startTimer(){
         calculateTime(SystemClock.uptimeMillis(), lifecycleScope) {
 
@@ -114,6 +108,7 @@ class CounterService : LifecycleService() {
 
 
                             timerJob.cancel()
+                            CountActivity.counter = 0
                             format = "00:00:00"
 
 //                            secondNotificationPop = true
@@ -161,7 +156,9 @@ class CounterService : LifecycleService() {
         channel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
         val service = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         service.createNotificationChannel(channel)
+
         return channelId
+
     }
 
     override fun onDestroy() {
