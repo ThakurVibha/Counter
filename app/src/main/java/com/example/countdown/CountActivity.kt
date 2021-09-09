@@ -73,46 +73,22 @@ class CountActivity : AppCompatActivity() {
 
     }
 
-    private fun setTimer() {
-        if (beforeTime != 1) {
-            if (beforeTime == 12) {
-                t.scheduleAtFixedRate(
-                    object : TimerTask() {
-                        override fun run() {
-                            if (counter == counter) {
-                                Log.e("counterTimer", "run: ")
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    delay(10000)
-                                    notificationManager.notify(
-                                        200,
-                                        showNewNotification(
-                                            "App stopped",
-                                            "App stopped",
-                                            this@CountActivity
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    },
-                    0,
-                    1000
-                )
-            }
-        }
-
-    }
 
     private fun onclick() {
         btnStart.setOnClickListener {
+            counter = 0
+            userCome = 0
+            inResumeCome = 0
+            inBackgroundCounter = 0
             startService()
             countService.startTimer()
-
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 Utils.newNotificationChannel(this)
             }
         }
     }
+
+
 
     private fun checkAppInBackground() {
         val runningAppProcessInfo = ActivityManager.RunningAppProcessInfo()
@@ -143,21 +119,28 @@ class CountActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        val powerManager = getSystemService(POWER_SERVICE)
-//        isScreenAwake = if (Build.VERSION.SDK_INT < 20) powerManager.isScreenOn else powerManager.isInteractive
-//        if (!isPhoneLocked){
-        isAppInBackground = true
-        if (counter != 0) {
-            notificationManager.notify(
-                1001,
-                showNewNotification("App running", "Your app will be stop after 10 seconds", this)
-            )
-            inBackgroundCounter = counter
-//            }
 
-            userCome = 1
+        val powerManager = getSystemService(POWER_SERVICE) as PowerManager
+        val isScreenOn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+            powerManager.isInteractive
+        } else {
+            powerManager.isScreenOn
         }
 
+        if (isScreenOn != false){
+            isAppInBackground = true
+            if (counter != 0) {
+                notificationManager.notify(
+                    1001,
+                    showNewNotification("App running", "Your app will be stop after 10 seconds", this)
+                )
+                inBackgroundCounter = counter
+                userCome = 1
+            }
+
+            Log.e("onPause","onPause")
+
+        }
 
     }
 

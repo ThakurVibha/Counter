@@ -70,7 +70,6 @@ class CounterService : LifecycleService() {
         var timeInMilliseconds: Long = 0L
         val elsp = 0L
         var updated = 0L
-        var timerCompare = 1
         timerJob = lifecycleScope.launch(CoroutineExceptionHandler(){ _, _ ->
             time("00:00:00")
         }) {
@@ -92,11 +91,10 @@ class CounterService : LifecycleService() {
                         seconds
                     )
                 )
-                timerCompare++
 
                 CountActivity.counter = seconds.toInt()
                 Log.e("myCounter", CountActivity.counter.toString())
-                val format = String.format(
+                var format = String.format(
                     resources.getString(R.string.modify_time_string),
                     timeString
                 )
@@ -114,9 +112,11 @@ class CounterService : LifecycleService() {
 
                             )
 
-                            stopSelf()
 
-                            secondNotificationPop = true
+                            timerJob.cancel()
+                            format = "00:00:00"
+
+//                            secondNotificationPop = true
 
                         }
 //                    }
